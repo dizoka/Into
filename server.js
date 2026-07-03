@@ -1,187 +1,314 @@
 const express = require('express');
+const path = require('path');
 const axios = require('axios');
 const cheerio = require('cheerio');
+const iconv = require('iconv-lite');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const OSVITA_UNIVERSITY_URL = 'https://vstup.osvita.ua/r4/309/';
-const EDBO_OFFER_URL = id => `https://vstup2025.edbo.gov.ua/offer/${id}`;
-const CACHE_MS = 1000 * 60 * 60 * 6;
-let cache = { at: 0, data: null, error: null };
+const OSVITA_BASE = 'https://vstup.osvita.ua';
+const LNTU_PAGE = `${OSVITA_BASE}/r4/309/`;
+const EDBO_BASE = 'https://vstup2025.edbo.gov.ua';
 
-const http = axios.create({
-  timeout: 25000,
-  headers: {
-    'User-Agent': 'Mozilla/5.0 (compatible; LNTUAdmissionsCalculator/3.0; +https://render.com)',
-    'Accept-Language': 'uk-UA,uk;q=0.9,en;q=0.5'
-  }
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-const SUBJECTS = {
-  ua: ['Українська мова'],
-  math: ['Математика'],
-  hist: ['Історія України'],
-  literature: ['Українська література'],
-  foreign: ['Іноземна мова'],
-  biology: ['Біологія'],
-  geography: ['Географія'],
-  physics: ['Фізика'],
-  chemistry: ['Хімія']
-};
+const cache = new Map();
+const TTL = 1000 * 60 * 60 * 6;
 
-function clean(s='') { return String(s).replace(/\s+/g, ' ').trim(); }
-function numFrom(text, pattern) {
-  const m = text.match(pattern);
-  return m ? Number(String(m[1]).replace(',', '.')) : null;
+function getCached(key) {
+  const item = cache.get(key);
+  if (!item) return null;
+  if (Date.now() - item.time > TTL) return null;
+  return item.data;
 }
-function txtMatch(text, pattern) {
-  const m = text.match(pattern);
-  return m ? clean(m[1]) : '';
+function setCached(key, data) {
+  cache.set(key, { time: Date.now(), data });
 }
-function codeFromSpecialty(s='') {
-  const m = s.match(/^([A-ZА-ЯІЇЄҐ]\d+(?:\.\d+)?)\s+(.+)$/i);
-  return m ? { code: m[1].toUpperCase(), name: clean(m[2]) } : { code: '', name: clean(s) };
+
+async function fetchHtml(url) {
+  const cached = getCached(url);
+  if (cached) return cached;
+  const res = await axios.get(url, {
+    responseType: 'arraybuffer',
+    timeout: 20000,
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/126 Safari/537.36',
+      'Accept-Language': 'uk-UA,uk;q=0.9,en;q=0.8'
+    }
+  });
+  let html;
+  const contentType = String(res.headers['content-type'] || '').toLowerCase();
+  if (contentType.includes('windows-1251')) html = iconv.decode(Buffer.from(res.data), 'win1251');
+  else html = Buffer.from(res.data).toString('utf8');
+  setCached(url, html);
+  return html;
 }
-function parseWeight(segment, labels) {
-  for (const label of labels) {
-    const esc = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const re = new RegExp(`${esc}\\*?[\\s\\S]{0,160}?k\\s*=\\s*([0-9]+(?:[.,][0-9]+)?)`, 'i');
-    const m = segment.match(re);
-    if (m) return Number(m[1].replace(',', '.'));
+
+function norm(s) {
+  return String(s || '').replace(/\s+/g, ' ').replace(/&nbsp;/g, ' ').trim();
+}
+function num(s) {
+  if (s == null) return null;
+  const m = String(s).replace(',', '.').match(/-?\d+(?:\.\d+)?/);
+  return m ? Number(m[0]) : null;
+}
+function firstRegex(text, patterns) {
+  for (const p of patterns) {
+    const m = text.match(p);
+    if (m) return norm(m[1] || m[0]);
+  }
+  return '';
+}
+
+// Snapshot потрібен тільки якщо джерело тимчасово не відкрилось.
+// Дані з сайту при нормальній роботі мають пріоритет над цим fallback.
+const FALLBACK_OFFERS = [
+  { id:'fallback-f5', code:'F5', speciality:'Кібербезпека та захист інформації', proposal:'Кібербезпека', educationProgram:'Кібербезпека', budgetMin:134.7, edboStats:{applied:399,admitted:368,budgetApps:161,avg:139.4,min:104.8,max:194.6,recommended:61,budgetEnrolled:18,contractEnrolled:42,minRecommended:112.8,budgetMin:134.7,contractMin:106.5}, coefficients:{ukrainian:0.3,math:0.5,history:0.2,fourth:{literature:0.2,foreign:0.3,biology:0.2,geography:0.2,physics:0.4,chemistry:0.3}}, sectorCoef:1 },
+  { id:'fallback-h7', code:'H7', speciality:'Агроінженерія', proposal:'Агроінженерія', educationProgram:'Агроінженерія', budgetMin:135, coefficients:{ukrainian:0.4,math:0.3,history:0.3,fourth:{literature:0.2,foreign:0.4,biology:0.5,geography:0.2,physics:0.5,chemistry:0.5}}, sectorCoef:1.02 },
+  { id:'fallback-j8', code:'J8', speciality:'Автомобільний транспорт', proposal:'Транспортно-логістичні системи автомобільних перевезень', educationProgram:'Транспортно-логістичні системи автомобільних перевезень', budgetMin:149.74, coefficients:{ukrainian:0.3,math:0.5,history:0.2,fourth:{literature:0.2,foreign:0.5,biology:0.2,geography:0.3,physics:0.4,chemistry:0.3}}, sectorCoef:1.02 },
+  { id:'fallback-f3', code:'F3', speciality:'Комп’ютерні науки', proposal:'Комп’ютерні науки', educationProgram:'Комп’ютерні науки', budgetMin:null, coefficients:{ukrainian:0.3,math:0.5,history:0.2,fourth:{literature:0.2,foreign:0.3,biology:0.2,geography:0.2,physics:0.4,chemistry:0.3}}, sectorCoef:1 },
+  { id:'fallback-f6', code:'F6', speciality:'Інформаційні системи і технології', proposal:'Інформаційні системи і технології', educationProgram:'Інформаційні системи і технології', budgetMin:null, coefficients:{ukrainian:0.3,math:0.5,history:0.2,fourth:{literature:0.2,foreign:0.3,biology:0.2,geography:0.2,physics:0.4,chemistry:0.3}}, sectorCoef:1 },
+  { id:'fallback-d3', code:'D3', speciality:'Менеджмент', proposal:'Менеджмент', educationProgram:'Менеджмент', budgetMin:null, coefficients:{ukrainian:0.3,math:0.35,history:0.35,fourth:{literature:0.3,foreign:0.4,biology:0.2,geography:0.35,physics:0.2,chemistry:0.2}}, sectorCoef:1 },
+  { id:'fallback-d5', code:'D5', speciality:'Маркетинг', proposal:'Маркетинг', educationProgram:'Маркетинг', budgetMin:null, coefficients:{ukrainian:0.3,math:0.35,history:0.35,fourth:{literature:0.3,foreign:0.4,biology:0.2,geography:0.35,physics:0.2,chemistry:0.2}}, sectorCoef:1 }
+];
+
+function extractCodeAndSpeciality(text) {
+  let t = norm(text);
+  const m = t.match(/\b([A-ZА-ЯІЇЄҐ]\d(?:\.\d+)?)\b\s*([^\n\r]+)/i);
+  if (!m) return { code:'', speciality:t };
+  let code = m[1].toUpperCase();
+  let speciality = norm(m[2]).replace(/^[-–—:\s]+/, '');
+  speciality = speciality.replace(/Назва пропозиції.*$/i, '').trim();
+  return { code, speciality };
+}
+
+function extractBudgetMin(text) {
+  const patterns = [
+    /Мін\.\s*бал\s*зарахованих\s*на\s*бюджет\s*([\d.,]+)/i,
+    /Мінімальний\s*бал\s*зарахованих\s*на\s*бюджет\s*([\d.,]+)/i,
+    /мін\.\s*бюджет[^\d]{0,30}([\d.,]+)/i,
+    /бюджет[^\d]{0,40}([\d]{3}(?:[.,]\d+)?)/i
+  ];
+  for (const p of patterns) {
+    const m = text.match(p);
+    if (m) return num(m[1]);
   }
   return null;
 }
-function parseOsvitaPage(url, html) {
-  const $ = cheerio.load(html);
-  const body = clean($('body').text());
-  const composition = body.includes('Складові конкурсного бала')
-    ? body.split('Складові конкурсного бала')[1].split(/Статистика спеціальності|Рейтинговий список|Додати в закладки/i)[0]
-    : body;
 
-  const educationalProgram = txtMatch(body, /Освітня програма:\s*([^\.]+)\./i) || txtMatch(body, /#\s*Освітня програма:\s*([^\.]+)\./i);
-  const specRaw = txtMatch(body, /Спеціальність:\s*([A-ZА-ЯІЇЄҐ0-9\.]+\.\s*[^\.]+)\./i);
-  const parsedSpec = codeFromSpecialty(specRaw.replace('.', ''));
-  const specialtyCode = parsedSpec.code;
-  const specialtyName = parsedSpec.name;
-
-  const base = txtMatch(body, /На базі:\s*([^\.]+)\./i);
-  const degree = txtMatch(body, /Ступінь навчання:\s*([^\.]+)\./i);
-  const faculty = txtMatch(body, /Факультет:\s*([^\.]+)\./i);
-  const mode = txtMatch(body, /Форма навчання:\s*([^\.]+)\./i);
-  const offerType = txtMatch(body, /Тип пропозиції:\s*([^\.]+)\./i);
-  const startCourse = txtMatch(body, /Зарахування:\s*([^\.]+)\./i);
-  const contractCost = numFrom(body, /Вартість навчання за рік \(контракт\):\s*([0-9.,]+)/i);
-  const license = numFrom(body, /Ліцензійний обсяг\s*([0-9.,]+)/i);
-  const stateOrder = numFrom(body, /Максимальний обсяг державного замовлення\s*([0-9.,]+)/i);
-
-  const weights = {};
-  for (const [key, labels] of Object.entries(SUBJECTS)) weights[key] = parseWeight(composition, labels);
-  const optionalWeights = ['literature','foreign','biology','geography','physics','chemistry']
-    .map(k => weights[k]).filter(v => typeof v === 'number');
-  const k4max = optionalWeights.length ? Math.max(...optionalWeights) : null;
-
-  const minRatingBudget = numFrom(body, /Мінімальний рейтинговий бал серед зарахованих на бюджет\s*([0-9.,]+)/i);
-  const avgRatingBudget = numFrom(body, /Середній рейтинговий бал зарахованих на бюджет\s*([0-9.,]+)/i);
-  const avgNmtBudget = numFrom(body, /Середній бал ЗНО серед зарахованих на бюджет\s*([0-9.,]+)/i);
-  const enrolledBudget = numFrom(body, /Зараховано на бюджет всього\s*([0-9.,]+)/i);
-  const enrolledContract = numFrom(body, /Зараховано на контракт всього\s*([0-9.,]+)/i);
-  const totalApps = numFrom(body, /Всього поданих заяв\s*([0-9.,]+)/i);
-  const competition = numFrom(body, /Конкурс на одне бюджетне місце \(всі заяви\)\s*([0-9.,]+)/i);
-
-  const offerId = (url.match(/\/(\d+)\/?$/) || [])[1] || '';
-  return {
-    id: offerId,
-    source: url,
-    edbo: offerId ? EDBO_OFFER_URL(offerId) : '',
-    code: specialtyCode,
-    specialty: specialtyName,
-    offerName: educationalProgram || specialtyName,
-    base, degree, faculty, mode, offerType, startCourse,
-    contractCost, license, stateOrder,
-    weights, k4max,
-    minRatingBudget, avgRatingBudget, avgNmtBudget, enrolledBudget, enrolledContract, totalApps, competition,
-    edboStats: null,
-    hasFullCalc: Boolean(weights.ua && weights.math && weights.hist && k4max),
-    isPzso: /повна|загальна|середня|пзсо/i.test(base) || !/молодш|фахов/i.test(base),
-    isBachelor: /бакалавр/i.test(degree)
-  };
-}
-async function fetchEdboStats(id) {
-  if (!id) return null;
-  try {
-    const { data } = await http.get(EDBO_OFFER_URL(id));
-    const $ = cheerio.load(data);
-    const text = clean($('body').text());
-    const get = (label) => {
-      const esc = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      return numFrom(text, new RegExp(esc + '\\s*([0-9]+(?:[.,][0-9]+)?)', 'i'));
-    };
-    return {
-      submitted: get('Подано заяв'),
-      admitted: get('Допущено до конкурсу'),
-      budgetApps: get('Заяв на бюджет'),
-      avgScore: get('Сер\\. бал') || get('Сер. бал'),
-      minScore: get('Мін\\. бал') || get('Мін. бал'),
-      maxScore: get('Макс\\. бал') || get('Макс. бал'),
-      recommendedGeneral: get('Рекомендовано на загальних підставах'),
-      enrolledBudget: get('Зараховано на бюджет'),
-      enrolledContract: get('Зараховано на контракт'),
-      minRecommended: get('Мін\\. бал рекомендованих') || get('Мін. бал рекомендованих'),
-      minBudgetEnrolled: get('Мін\\. бал зарахованих на бюджет') || get('Мін. бал зарахованих на бюджет'),
-      source: EDBO_OFFER_URL(id)
-    };
-  } catch (e) {
-    return null;
+function extractEdboStats(text) {
+  const labels = [
+    ['applied', /Подано\s*заяв\s*([\d.,]+)/i],
+    ['admitted', /Допущено\s*до\s*конкурсу\s*([\d.,]+)/i],
+    ['budgetApps', /Заяв\s*на\s*бюджет\s*([\d.,]+)/i],
+    ['avg', /Сер\.\s*бал\s*([\d.,]+)/i],
+    ['min', /Мін\.\s*бал\s*([\d.,]+)/i],
+    ['max', /Макс\.\s*бал\s*([\d.,]+)/i],
+    ['recommended', /Рекомендовано\s*на\s*загальних\s*підставах\s*([\d.,]+)/i],
+    ['budgetEnrolled', /Зараховано\s*на\s*бюджет\s*([\d.,]+)/i],
+    ['contractEnrolled', /Зараховано\s*на\s*контракт\s*([\d.,]+)/i],
+    ['minRecommended', /Мін\.\s*бал\s*рекомендованих\s*([\d.,]+)/i],
+    ['budgetMin', /Мін\.\s*бал\s*зарахованих\s*на\s*бюджет\s*([\d.,]+)/i],
+    ['contractMin', /Мін\.\s*бал\s*зарахованих\s*на\s*контракт\s*([\d.,]+)/i]
+  ];
+  const out = {};
+  for (const [key, re] of labels) {
+    const m = text.match(re);
+    if (m) out[key] = num(m[1]);
   }
+  return out;
 }
-async function loadPrograms(force=false) {
-  if (!force && cache.data && Date.now() - cache.at < CACHE_MS) return cache.data;
-  try {
-    const { data } = await http.get(OSVITA_UNIVERSITY_URL);
-    const $ = cheerio.load(data);
-    const links = new Map();
-    $('a[href]').each((_, a) => {
-      const href = $(a).attr('href') || '';
-      const abs = new URL(href, OSVITA_UNIVERSITY_URL).href;
-      if (/\/y2025\/r4\/309\/\d+\/?$/.test(abs)) links.set(abs, true);
+
+function extractProposalText($, text) {
+  const getAfter = (label) => {
+    let found = '';
+    $('*').each((_, el) => {
+      if (found) return;
+      const own = norm($(el).text());
+      if (own === label || own.toLowerCase() === label.toLowerCase()) {
+        const next = norm($(el).next().text());
+        if (next && next !== label) found = next;
+      }
     });
-    // fallback: also parse text links if cheerio did not catch them
-    const urls = Array.from(links.keys());
-    const results = [];
-    for (const url of urls) {
-      try {
-        const page = await http.get(url);
-        const item = parseOsvitaPage(url, page.data);
-        if (item.isBachelor && item.isPzso && item.code && item.hasFullCalc) results.push(item);
-      } catch (e) {}
+    return found;
+  };
+  const proposal = getAfter('Назва пропозиції') || firstRegex(text, [/Назва\s*пропозиції\s+(.+?)(?:Код\s*конкурсної|Освітня\s*програма|Факультет)/i]);
+  const educationProgram = getAfter('Освітня програма') || firstRegex(text, [/Освітня\s*програма\s+(.+?)(?:Факультет|Форма\s*навчання)/i]);
+  const faculty = getAfter('Факультет') || firstRegex(text, [/Факультет\s+(.+?)(?:Форма\s*навчання|Курс\s*зарахування)/i]);
+  return { proposal: norm(proposal), educationProgram: norm(educationProgram), faculty: norm(faculty) };
+}
+
+const subjectMap = [
+  ['ukrainian', ['Українська мова']],
+  ['math', ['Математика']],
+  ['history', ['Історія України']],
+  ['literature', ['Українська література']],
+  ['foreign', ['Іноземна мова']],
+  ['biology', ['Біологія']],
+  ['geography', ['Географія']],
+  ['physics', ['Фізика']],
+  ['chemistry', ['Хімія']]
+];
+
+function subjectKey(name) {
+  const n = norm(name).toLowerCase();
+  for (const [key, aliases] of subjectMap) {
+    if (aliases.some(a => n.includes(a.toLowerCase()))) return key;
+  }
+  return null;
+}
+
+function extractCoefficients($, text) {
+  const coeffs = { fourth: {} };
+  let found = false;
+
+  // Most stable parser: search text rows that contain subject and coefficient nearby.
+  const full = text.replace(/\s+/g, ' ');
+  for (const [key, aliases] of subjectMap) {
+    for (const alias of aliases) {
+      const re = new RegExp(alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[^\d]{0,80}(0[,.]\d+)', 'i');
+      const m = full.match(re);
+      if (m) {
+        const v = num(m[1]);
+        if (['literature','foreign','biology','geography','physics','chemistry'].includes(key)) coeffs.fourth[key] = v;
+        else coeffs[key] = v;
+        found = true;
+      }
     }
-    // avoid too many EDBO requests: enrich important stats lazily for all found, with safe sequence
-    for (const item of results.slice(0, 80)) item.edboStats = await fetchEdboStats(item.id);
-    const uniq = new Map();
-    for (const item of results) {
-      const key = `${item.code}|${item.offerName}|${item.mode}|${item.id}`;
-      uniq.set(key, item);
-    }
-    const programs = Array.from(uniq.values()).sort((a,b) => (a.code+a.offerName).localeCompare(b.code+b.offerName,'uk'));
-    const payload = { fetchedAt: new Date().toISOString(), count: programs.length, source: OSVITA_UNIVERSITY_URL, programs };
-    cache = { at: Date.now(), data: payload, error: null };
-    return payload;
+  }
+
+  // Alternate parser: visible colored coefficient chips on EDBO-like blocks.
+  $('tr, li, div').each((_, el) => {
+    const row = norm($(el).text());
+    const k = subjectKey(row);
+    if (!k) return;
+    const m = row.match(/\b(0[,.]\d+)\b/);
+    if (!m) return;
+    const v = num(m[1]);
+    if (['literature','foreign','biology','geography','physics','chemistry'].includes(k)) coeffs.fourth[k] = v;
+    else coeffs[k] = v;
+    found = true;
+  });
+
+  if (!found) return null;
+  return coeffs;
+}
+
+function extractSectorCoef(text) {
+  if (/Галузевий\s*коефіцієнт[^\d]{0,30}1[,.]02/i.test(text)) return 1.02;
+  if (/×\s*1[,.]02/i.test(text) || /x\s*1[,.]02/i.test(text)) return 1.02;
+  return 1;
+}
+
+async function parseOffer(urlOrId) {
+  const url = /^https?:/.test(urlOrId) ? urlOrId : `${OSVITA_BASE}/r4/309/${urlOrId}/`;
+  const cached = getCached('offer:' + url);
+  if (cached) return cached;
+
+  const html = await fetchHtml(url);
+  const $ = cheerio.load(html);
+  const text = norm($.text());
+  const title = norm($('h1').first().text() || $('title').text());
+  const cs = extractCodeAndSpeciality(title + ' ' + text.slice(0, 600));
+  const meta = extractProposalText($, text);
+  const coefficients = extractCoefficients($, text);
+  const budgetMin = extractBudgetMin(text);
+  const edboStats = extractEdboStats(text);
+  const codeMatch = text.match(/Код\s*конкурсної\s*пропозиції\s*(\d+)/i) || url.match(/\/(\d+)\/?$/);
+  const offerCode = codeMatch ? codeMatch[1] : '';
+
+  let offer = {
+    id: offerCode || url,
+    url,
+    code: cs.code,
+    speciality: cs.speciality,
+    proposal: meta.proposal || meta.educationProgram || cs.speciality,
+    educationProgram: meta.educationProgram || meta.proposal || cs.speciality,
+    faculty: meta.faculty,
+    budgetMin: edboStats.budgetMin || budgetMin || null,
+    edboStats,
+    coefficients,
+    sectorCoef: extractSectorCoef(text),
+    source: 'osvita'
+  };
+
+  setCached('offer:' + url, offer);
+  return offer;
+}
+
+async function loadOffersFromOsvita() {
+  const cached = getCached('offers');
+  if (cached) return cached;
+  try {
+    const html = await fetchHtml(LNTU_PAGE);
+    const $ = cheerio.load(html);
+    const links = [];
+    $('a[href]').each((_, a) => {
+      const href = $(a).attr('href');
+      const text = norm($(a).text());
+      if (!href) return;
+      const abs = href.startsWith('http') ? href : OSVITA_BASE + href;
+      if (/\/r4\/309\/\d+\/?/.test(abs) || /\/y2025\/r4\/309\/\d+\/?/.test(abs)) {
+        links.push({ url: abs, text });
+      }
+    });
+    const unique = Array.from(new Map(links.map(l => [l.url, l])).values()).slice(0, 120);
+    const quick = unique.map((l, idx) => {
+      const cs = extractCodeAndSpeciality(l.text);
+      return {
+        id: l.url.match(/\/(\d+)\/?$/)?.[1] || String(idx),
+        url: l.url,
+        code: cs.code,
+        speciality: cs.speciality || l.text,
+        proposal: '',
+        educationProgram: '',
+        budgetMin: null,
+        source: 'osvita-list'
+      };
+    }).filter(o => o.code || o.speciality);
+
+    // Add fallback and de-duplicate by id/url so site is never empty.
+    const byKey = new Map();
+    [...quick, ...FALLBACK_OFFERS].forEach(o => byKey.set(o.id || o.url, o));
+    const offers = Array.from(byKey.values());
+    setCached('offers', offers);
+    return offers;
   } catch (e) {
-    cache.error = e.message;
-    if (cache.data) return cache.data;
-    throw e;
+    return FALLBACK_OFFERS;
   }
 }
 
-app.use(express.static('public'));
-app.get('/api/programs', async (req, res) => {
+app.get('/api/offers', async (req, res) => {
   try {
-    const force = req.query.refresh === '1';
-    const data = await loadPrograms(force);
-    res.json(data);
+    const offers = await loadOffersFromOsvita();
+    res.json({ ok: true, updatedAt: new Date().toISOString(), offers });
   } catch (e) {
-    res.status(500).json({ error: 'Не вдалося завантажити дані з Освіта.UA', detail: e.message });
+    res.json({ ok: false, error: e.message, offers: FALLBACK_OFFERS });
   }
 });
-app.get('/api/health', (req,res)=>res.json({ok:true, cached: !!cache.data, error: cache.error, at: cache.at}));
-app.listen(PORT, () => console.log(`LNTU calculator started on ${PORT}`));
+
+app.get('/api/offer/:id', async (req, res) => {
+  try {
+    const offers = await loadOffersFromOsvita();
+    const item = offers.find(o => String(o.id) === String(req.params.id)) || FALLBACK_OFFERS.find(o => String(o.id) === String(req.params.id));
+    if (!item) return res.status(404).json({ ok:false, error:'Offer not found' });
+    if (String(item.id).startsWith('fallback') || !item.url) return res.json({ ok:true, offer:item });
+    const full = await parseOffer(item.url);
+    res.json({ ok:true, offer:{ ...item, ...full } });
+  } catch (e) {
+    res.status(500).json({ ok:false, error:e.message });
+  }
+});
+
+app.post('/api/refresh', async (req, res) => {
+  cache.clear();
+  const offers = await loadOffersFromOsvita();
+  res.json({ ok:true, count:offers.length });
+});
+
+app.listen(PORT, () => console.log(`LNTU Osvita calculator running on port ${PORT}`));

@@ -1,7 +1,8 @@
 services:
   - type: web
-    name: lntu-osvita-edbo-calculator
+    name: lntu-osvita-calculator
     env: node
     plan: free
     buildCommand: npm install
     startCommand: npm start
+    autoDeploy: true

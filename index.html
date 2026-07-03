@@ -1,147 +1,108 @@
 <!doctype html>
 <html lang="uk">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ЛНТУ 2026 — калькулятор як Освіта.UA</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ЛНТУ — калькулятор вступу</title>
   <style>
-    :root{--bg:#eef6fb;--card:#fff;--ink:#202a33;--muted:#60707b;--line:#c7dce5;--teal:#2d7f8f;--teal2:#176373;--green:#07875b;--red:#c0392b;--yellow:#ad7100;--shadow:0 12px 35px rgba(33,66,88,.10)}
-    *{box-sizing:border-box} html{scroll-behavior:smooth} body{margin:0;background:linear-gradient(180deg,#f8fbff,var(--bg));font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:var(--ink)}
-    .wrap{max-width:1180px;margin:auto;padding:14px 14px 56px}.hero{background:linear-gradient(135deg,#13788b,#31a4b8);color:#fff;border-radius:24px;padding:22px;box-shadow:var(--shadow)}
-    .hero h1{font-size:clamp(26px,5vw,44px);line-height:1.05;margin:0 0 8px}.hero p{margin:0;opacity:.94;font-size:15px;max-width:860px}.badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.badge{padding:7px 10px;border-radius:999px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.25);font-weight:850;font-size:12px}
-    .layout{display:grid;grid-template-columns:390px 1fr;gap:16px;margin-top:16px}.panel,.box,.card{background:var(--card);border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow)}.panel{padding:16px;position:sticky;top:12px;height:max-content}.sectionTitle{font-size:22px;font-weight:950;margin:4px 0 12px}.label{font-weight:900;margin:12px 0 7px;display:block}.hint{font-size:12px;color:var(--muted);margin-top:6px}.input,select{width:100%;border:1px solid #b8ccd5;border-radius:15px;background:#fff;padding:12px 13px;font-size:16px;color:var(--ink);outline:0}.input:focus,select:focus{border-color:var(--teal);box-shadow:0 0 0 4px rgba(45,127,143,.12)}
-    .subject{display:grid;grid-template-columns:1fr 112px;gap:9px;align-items:center;margin:8px 0}.subject span{font-size:15px}.two{display:grid;grid-template-columns:1fr 112px;gap:9px}.btn{border:0;border-radius:15px;padding:13px 15px;font-weight:950;cursor:pointer}.primary{background:var(--teal);color:white;width:100%;font-size:16px;margin-top:12px}.ghost{background:#eaf6f9;color:var(--teal2)}.danger{background:#fff0ef;color:#b3261e}.row{display:flex;gap:8px;flex-wrap:wrap}.status{margin-top:10px;font-size:13px;padding:10px 12px;border-radius:14px;background:#f2f8fb;color:#225f6d;border:1px solid #cbe2ea}
-    .selectWrap{position:relative}.selectBtn{width:100%;border:1px solid #b8ccd5;border-radius:15px;background:#fff;padding:11px 42px 11px 12px;display:flex;align-items:center;gap:8px;text-align:left;cursor:pointer;min-height:48px}.selectBtn:after{content:'⌄';position:absolute;right:16px;font-size:24px;color:#5a6972}.code{display:inline-flex;align-items:center;justify-content:center;background:#061d91;color:#fff;border-radius:8px;padding:4px 7px;font-weight:950;font-size:13px;min-width:38px}.drop{display:none;position:absolute;left:0;right:0;top:54px;background:#fff;border:1px solid #b8ccd5;border-radius:18px;box-shadow:0 18px 45px rgba(0,0,0,.18);padding:9px;z-index:20}.drop.show{display:block}.opts{max-height:390px;overflow:auto;margin-top:7px}.opt{padding:10px;border-radius:13px;display:flex;gap:9px;align-items:flex-start;cursor:pointer}.opt:hover,.opt.active{background:#1186d8;color:white}.opt:hover .mini,.opt.active .mini{color:rgba(255,255,255,.84)}.mini{font-size:12px;color:var(--muted)}.tick{margin-left:auto;font-weight:950}
-    .tools{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;margin-bottom:12px}.tools h2{margin:0;font-size:24px}.search{max-width:330px}.cards{display:grid;gap:12px}.card{padding:15px;display:grid;grid-template-columns:auto 1fr auto;gap:13px;align-items:start}.title{font-size:18px;font-weight:950}.sub{font-size:13px;color:var(--muted);margin-top:4px;line-height:1.35}.pills{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}.pill{font-size:12px;border-radius:999px;background:#eef7fb;color:var(--teal2);padding:6px 8px;font-weight:850}.pill.ok{background:#e7fbf2;color:var(--green)}.pill.no{background:#fff0ef;color:var(--red)}.pill.warn{background:#fff7e8;color:var(--yellow)}.right{text-align:right;min-width:160px}.big{font-size:24px;font-weight:950}.okText{color:var(--green)}.noText{color:var(--red)}.warnText{color:var(--yellow)}
-    .detail{overflow:hidden;margin-bottom:13px}.detailHead{background:#eaf6fb;color:var(--teal2);padding:16px}.detailHead h3{font-size:28px;margin:0 0 7px}.score{font-size:33px;font-weight:950;line-height:1.15}.score small{font-size:17px}.budgetLine{font-size:20px;font-weight:950;margin-top:10px}.formula{width:100%;border-collapse:collapse;background:#fff}.formula td{padding:10px 12px;border-top:1px solid var(--line);border-right:1px solid var(--line)}.formula td:last-child{border-right:0;text-align:right;font-weight:900;white-space:nowrap}.stats{background:#123f4a;color:#eaffff;padding:12px 16px}.statsGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;font-size:13px}.stats b{font-size:15px}.empty{background:#fbfeff;border:1px dashed var(--line);border-radius:18px;padding:30px;text-align:center;color:var(--muted)}
-    .tableBox{overflow:auto;margin-top:14px}.tableBox table{width:100%;border-collapse:collapse;font-size:14px;background:#fff}.tableBox th,.tableBox td{padding:11px;border-bottom:1px solid #e1edf2;text-align:left;vertical-align:top}.tableBox th{font-size:12px;text-transform:uppercase;color:#4d5f69;background:#f3f9fc;white-space:nowrap}.sourceLink{color:#176373;font-weight:800;text-decoration:none}
-    @media(max-width:920px){.layout{grid-template-columns:1fr}.panel{position:static}.card{grid-template-columns:1fr}.right{text-align:left}.tools{grid-template-columns:1fr}.search{max-width:none}.drop{position:fixed;left:10px;right:10px;top:76px}.opts{max-height:70vh}.hero{border-radius:0;margin:-14px -14px 0}.wrap{padding-top:0}.statsGrid{grid-template-columns:1fr}.score{font-size:28px}.detailHead h3{font-size:24px}}
+    :root{
+      --bg:#eef8fb;--card:#fff;--text:#17212b;--muted:#60717d;--line:#d7e7ee;--main:#087f90;--main2:#0b6575;--ok:#0a9157;--bad:#c63737;--soft:#eaf7fb;--warn:#b7791f;
+    }
+    *{box-sizing:border-box} body{margin:0;background:linear-gradient(180deg,#eaf8fc,#fff);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--text)}
+    header{position:sticky;top:0;z-index:10;background:rgba(8,127,144,.95);backdrop-filter:blur(10px);color:#fff;padding:14px 16px;box-shadow:0 6px 18px rgba(0,0,0,.12)}
+    .wrap{max-width:1120px;margin:0 auto}.top{display:flex;align-items:center;justify-content:space-between;gap:12px}.brand{font-weight:900;font-size:20px;letter-spacing:.2px}.pill{font-size:12px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);padding:7px 10px;border-radius:999px;white-space:nowrap}
+    main{padding:18px 14px 40px}.grid{display:grid;grid-template-columns:420px 1fr;gap:16px;align-items:start}.panel{background:var(--card);border:1px solid var(--line);border-radius:22px;box-shadow:0 10px 30px rgba(8,127,144,.08);padding:16px}.panel h2{font-size:23px;margin:0 0 12px}.hint{color:var(--muted);font-size:14px;line-height:1.35;margin:5px 0 12px}.label{font-weight:800;margin:12px 0 7px}.row{display:grid;grid-template-columns:1fr 112px;gap:10px;align-items:center;margin:8px 0}.row label{font-size:16px}.input,select,button{font:inherit}.input,select{width:100%;border:1px solid #bfd3dd;border-radius:13px;padding:12px 13px;background:#fff;color:var(--text);outline:none}.input:focus,select:focus{border-color:var(--main);box-shadow:0 0 0 3px rgba(8,127,144,.12)}.score{font-weight:900;text-align:center;font-size:18px}.btn{width:100%;border:0;border-radius:14px;background:var(--main);color:white;padding:14px;font-weight:900;cursor:pointer;margin-top:12px}.btn:hover{background:var(--main2)}.btn.secondary{background:#e7f3f7;color:var(--main2);width:auto;padding:10px 13px;margin:0}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+    .selectBox{position:relative}.chosen{border:1px solid #bfd3dd;background:#fff;border-radius:14px;min-height:50px;padding:12px;display:flex;align-items:center;gap:9px;cursor:pointer}.code{display:inline-flex;background:#050d9a;color:#fff;border-radius:6px;padding:2px 7px;font-size:13px;font-weight:900;white-space:nowrap}.chev{margin-left:auto}.drop{display:none;position:absolute;z-index:50;top:56px;left:0;right:0;background:#fff;border:1px solid #bfd3dd;border-radius:14px;box-shadow:0 20px 50px rgba(0,0,0,.18);overflow:hidden}.drop.open{display:block}.search{padding:10px;border-bottom:1px solid var(--line)}.options{max-height:350px;overflow:auto}.opt{padding:10px 12px;display:flex;gap:8px;align-items:flex-start;cursor:pointer;border-bottom:1px solid #f2f7f9}.opt:hover,.opt.active{background:#eaf4ff}.opt small{display:block;color:var(--muted);margin-top:2px;line-height:1.25}.allBadge{background:#0822a9;color:#fff;border-radius:8px;padding:3px 9px;font-weight:900;font-size:13px}
+    .resultCard{background:var(--soft);border:1px solid #b9dce6;border-radius:20px;overflow:hidden;margin-bottom:14px}.resultHead{padding:16px 18px}.title{font-size:25px;font-weight:900;color:#167484;line-height:1.15}.proposal{font-size:18px;color:#277b8b;margin-top:7px}.big{font-size:38px;line-height:1.15;font-weight:950;color:#167484;margin-top:12px}.subBig{font-size:28px;font-weight:900;color:#167484}.status{font-size:20px;font-weight:950;margin-top:10px}.ok{color:var(--ok)}.bad{color:var(--bad)}.warn{color:var(--warn)}table{width:100%;border-collapse:collapse;background:#fff}td,th{border:1px solid #d4e6ee;padding:10px 12px;text-align:left}td:nth-child(2),td:nth-child(3){text-align:center;white-space:nowrap}th{background:#f6fbfd}.note{padding:13px 15px;border-radius:16px;background:#edf9fc;border:1px solid #c2e4ed;color:#176f7e;line-height:1.35;margin:12px 0;font-size:15px}.list{display:grid;gap:10px}.item{background:#fff;border:1px solid var(--line);border-radius:16px;padding:13px;display:grid;grid-template-columns:1fr auto;gap:8px;cursor:pointer}.item:hover{border-color:var(--main);box-shadow:0 8px 20px rgba(8,127,144,.1)}.itemTitle{font-weight:900;color:#176f7e}.itemMeta{font-size:14px;color:var(--muted);margin-top:3px}.badge{border-radius:999px;padding:7px 10px;font-weight:900;font-size:13px;align-self:start}.badge.ok{background:#e5f8ef}.badge.bad{background:#ffecec}.badge.warn{background:#fff5db}.statGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}.stat{background:#083e4c;color:#dff6fc;border-radius:10px;padding:9px;font-size:13px}.stat b{font-size:16px;color:#fff;margin-right:5px}.loading{padding:16px;border:1px dashed #aacbd5;border-radius:16px;color:#47727e;background:#f8fdff}.hidden{display:none!important}.footerText{font-size:13px;color:var(--muted);line-height:1.4;margin-top:14px}.compare{margin-top:16px}.compareList{display:grid;gap:8px}.mini{background:#f7fcfd;border:1px solid var(--line);border-radius:14px;padding:10px;display:flex;justify-content:space-between;gap:8px}.err{background:#fff0f0;border:1px solid #ffc6c6;color:#9c2323;border-radius:14px;padding:12px;margin:10px 0}
+    @media(max-width:850px){.grid{grid-template-columns:1fr}.brand{font-size:18px}.pill{display:none}.panel{border-radius:18px;padding:14px}.title{font-size:23px}.big{font-size:34px}.subBig{font-size:26px}.row{grid-template-columns:1fr 100px}.input,select{padding:11px}.options{max-height:310px}.item{grid-template-columns:1fr}.badge{justify-self:start}.statGrid{grid-template-columns:1fr}main{padding:12px 10px 30px}header{padding:12px 10px}}
   </style>
 </head>
 <body>
-  <main class="wrap">
-    <section class="hero">
-      <h1>ЛНТУ 2026 — калькулятор як на Освіта.UA</h1>
-      <p>Обери спеціальність, введи 4 бали НМТ — сайт рахує конкурсний бал по коефіцієнтах цієї пропозиції та порівнює з бюджетною статистикою Освіта.UA / ЄДЕБО.</p>
-      <div class="badges"><span class="badge">live-дані з Освіта.UA</span><span class="badge">ЄДЕБО статистика</span><span class="badge">формула 2026</span><span class="badge">1–2 / 3–10 пріоритети</span><span class="badge">телефон + ПК</span></div>
+<header><div class="wrap top"><div class="brand">ЛНТУ · калькулятор конкурсного бала</div><div class="pill">Web Service · Освіта.UA / ЄДЕБО</div></div></header>
+<main class="wrap">
+  <div class="grid">
+    <section class="panel">
+      <h2>1. Обери спеціальність</h2>
+      <div class="selectBox" id="selectBox">
+        <div class="chosen" id="chosen"><span class="allBadge">Усі</span><b>Показати всі спеціальності</b><span class="chev">⌄</span></div>
+        <div class="drop" id="drop">
+          <div class="search"><input class="input" id="search" placeholder="Пошук по коду, спеціальності, пропозиції"></div>
+          <div class="options" id="options"></div>
+        </div>
+      </div>
+      <p class="hint">Якщо вибрано “Усі”, детальна картка не показується — буде список, куди проходиш / не проходиш.</p>
+
+      <h2>2. Введи бали НМТ</h2>
+      <div class="row"><label>Українська мова</label><input id="ukrainian" class="input score" type="number" min="0" max="200" value="0"></div>
+      <div class="row"><label>Історія України</label><input id="history" class="input score" type="number" min="0" max="200" value="0"></div>
+      <div class="row"><label>Математика</label><input id="math" class="input score" type="number" min="0" max="200" value="0"></div>
+      <div class="label">4-й предмет</div>
+      <div class="row"><select id="fourthSubject"><option value="foreign">Іноземна мова</option><option value="physics">Фізика</option><option value="chemistry">Хімія</option><option value="biology">Біологія</option><option value="geography">Географія</option><option value="literature">Українська література</option></select><input id="fourthScore" class="input score" type="number" min="0" max="200" value="0"></div>
+      <div class="label">Підготовчі курси / ОУ</div>
+      <select id="prep"><option value="0">Немає / не враховувати</option><option value="5">+5</option><option value="10">+10</option><option value="15">+15</option></select>
+      <button class="btn" id="calcBtn">Розрахувати конкурсний бал</button>
+      <div class="actions"><button class="btn secondary" id="resetBtn">Скинути</button><button class="btn secondary" id="refreshBtn">Оновити дані</button></div>
+      <div id="loadState" class="loading" style="margin-top:12px">Завантажую спеціальності з Освіта.UA…</div>
+      <div id="errorBox" class="err hidden"></div>
     </section>
 
-    <div class="layout">
-      <aside class="panel">
-        <div class="sectionTitle">1. Спеціальність</div>
-        <div class="selectWrap" id="specBox">
-          <button class="selectBtn" id="selectBtn" type="button"><span class="code">Усі</span><b>Показати всі спеціальності</b></button>
-          <div class="drop" id="drop"><input id="specSearch" class="input" placeholder="Пошук по коду / назві / пропозиції"><div class="opts" id="opts"></div></div>
-        </div>
-        <div class="hint">Коли вибрано “Усі”, детальна картка не показується — тільки список куди проходиш / не проходиш.</div>
-
-        <div class="sectionTitle" style="margin-top:18px">2. Бали НМТ</div>
-        <div class="subject"><span>Українська мова</span><input id="ua" class="input" type="number" min="0" max="200" step="1" value="0"></div>
-        <div class="subject"><span>Історія України</span><input id="hist" class="input" type="number" min="0" max="200" step="1" value="0"></div>
-        <div class="subject"><span>Математика</span><input id="math" class="input" type="number" min="0" max="200" step="1" value="0"></div>
-        <label class="label">4-й предмет</label>
-        <div class="two"><select id="elective"><option value="foreign">Іноземна мова</option><option value="physics">Фізика</option><option value="chemistry">Хімія</option><option value="biology">Біологія</option><option value="geography">Географія</option><option value="literature">Українська література</option></select><input id="elScore" class="input" type="number" min="0" max="200" step="1" value="0"></div>
-        <label class="label">ОУ / підготовчі курси</label>
-        <select id="prep"><option value="0">Немає / не враховувати</option><option value="15">+15, якщо реально маєш право</option><option value="10">+10</option></select>
-        <button class="btn primary" id="calc">Розрахувати</button>
-        <div class="status" id="loadStatus">Завантажую дані з Освіта.UA…</div>
-        <div class="row" style="margin-top:10px"><button class="btn ghost" id="reset">Скинути</button><button class="btn ghost" id="refresh">Оновити дані</button></div>
-      </aside>
-
-      <section>
-        <div id="detail"></div>
-        <div class="tools"><h2 id="head">Усі спеціальності</h2><input id="search" class="input search" placeholder="Пошук у результатах"></div>
-        <div class="cards" id="cards"></div>
-        <div class="box tableBox"><table><thead><tr><th>Код</th><th>Спеціальність / пропозиція</th><th>3–10</th><th>1–2</th><th>Бюджетний поріг</th><th>Дані</th></tr></thead><tbody id="tbody"></tbody></table></div>
-      </section>
-    </div>
-  </main>
-
+    <section>
+      <div id="detail"></div>
+      <div class="panel">
+        <h2>Результати</h2>
+        <div id="summary" class="hint">Введи бали НМТ і натисни кнопку. Список буде відсортовано: спочатку бюджет, потім де не вистачає.</div>
+        <div id="list" class="list"></div>
+      </div>
+      <div class="panel compare hidden" id="compareBox"><h2>Порівняння</h2><div id="compareList" class="compareList"></div></div>
+    </section>
+  </div>
+</main>
 <script>
-const $ = id => document.getElementById(id);
-const LABEL = {ua:'Українська мова', hist:'Історія України', math:'Математика', foreign:'Іноземна мова', physics:'Фізика', chemistry:'Хімія', biology:'Біологія', geography:'Географія', literature:'Українська література'};
-const SUPPORT_PATTERNS = [/^A4/, /^E/, /^G/, /^H/, /^J/, /^K/];
-let programs = [], selected = 'all';
-function fmt(n,d=3){ return Number.isFinite(n) ? Number(n).toFixed(d) : '—'; }
-function validScore(v){ const n = Number(v); return Number.isFinite(n) && n >= 100 && n <= 200 ? n : null; }
-function num(id){ return validScore($(id).value); }
-function hasSupport(p){ return SUPPORT_PATTERNS.some(r => r.test(p.code || '')); }
-function minBudget(p){ return Number.isFinite(p.minRatingBudget) ? p.minRatingBudget : (p.edboStats && Number.isFinite(p.edboStats.minBudgetEnrolled) ? p.edboStats.minBudgetEnrolled : null); }
-function scores(p){
-  const ua=num('ua'), hist=num('hist'), math=num('math'), el=num('elScore'), elective=$('elective').value, ou=Number($('prep').value)||0;
-  if([ua,hist,math,el].some(v=>v===null)) return {ok:false};
-  const w=p.weights || {}; const k4=Number(w[elective]); const k4max=Number(p.k4max);
-  if(!Number.isFinite(w.ua)||!Number.isFinite(w.math)||!Number.isFinite(w.hist)||!Number.isFinite(k4)||!Number.isFinite(k4max)) return {ok:false, noWeights:true};
-  const numerator = ua*w.ua + math*w.math + hist*w.hist + el*k4;
-  const denominator = w.ua + w.math + w.hist + (k4 + k4max) / 2;
-  let base = numerator / denominator + ou;
-  base = Math.min(200, base);
-  const rk = 1.00; const gk = hasSupport(p) ? 1.02 : 1.00;
-  const p310 = Math.min(200, base * rk);
-  const p12 = Math.min(200, base * rk * gk);
-  return {ok:true, p310, p12, numerator, denominator, k4, k4max, gk, rk, ou};
+const state={offers:[],selected:'all',full:new Map(),compares:[]};
+const subjects={ukrainian:'Українська мова',history:'Історія України',math:'Математика',foreign:'Іноземна мова',physics:'Фізика',chemistry:'Хімія',biology:'Біологія',geography:'Географія',literature:'Українська література'};
+const $=id=>document.getElementById(id);
+function n(v){const x=Number(v);return Number.isFinite(x)?x:0}
+function fmt(v){return v==null||Number.isNaN(v)?'—':Number(v).toFixed(3)}
+function money(v){return v==null?'—':Number(v).toFixed(3)}
+function scores(){return{ukrainian:n($('ukrainian').value),history:n($('history').value),math:n($('math').value),fourthSubject:$('fourthSubject').value,fourthScore:n($('fourthScore').value),prep:n($('prep').value)}}
+function k4max(c){const vals=Object.values(c?.fourth||{}).filter(x=>typeof x==='number');return vals.length?Math.max(...vals):0}
+function hasCoeffs(o){return o.coefficients&&o.coefficients.ukrainian!=null&&o.coefficients.history!=null&&o.coefficients.math!=null&&o.coefficients.fourth}
+function calculate(o,s=scores()){
+  const c=o.coefficients;if(!hasCoeffs(o))return null;
+  const k1=n(c.ukrainian),k2=n(c.history),k3=n(c.math),k4=n(c.fourth[s.fourthSubject]);const max=k4max(c);
+  if(!k1||!k2||!k3||!k4||!max)return null;
+  const numerator=s.ukrainian*k1+s.history*k2+s.math*k3+s.fourthScore*k4;
+  const denom=k1+k2+k3+(k4+max)/2;
+  const base=(numerator/denom)+s.prep;
+  const sector=n(o.sectorCoef)||1;
+  const p3=Math.min(200,base);
+  const p12=sector>1?Math.min(200,p3*sector):p3;
+  const budget=o.budgetMin ?? o.edboStats?.budgetMin ?? null;
+  const pass=budget==null?null:p3>=budget || p12>=budget;
+  return{p12,p3,sector,k:{ukrainian:k1,history:k2,math:k3,fourth:k4,k4max:max},budget,pass};
 }
-function verdict(score, pass){ if(!Number.isFinite(score)||!Number.isFinite(pass)) return ['немає порогу','warnText']; const diff=score-pass; if(diff>=0) return [`+${fmt(diff,2)}`, 'okText']; if(diff>=-3) return [fmt(diff,2),'warnText']; return [fmt(diff,2),'noText']; }
-function selectedProgram(){ return programs.find(p=>p.id===selected); }
-async function load(force=false){
-  $('loadStatus').textContent = force ? 'Оновлюю дані з Освіта.UA / ЄДЕБО…' : 'Завантажую дані з Освіта.UA / ЄДЕБО…';
-  try{ const res = await fetch('/api/programs' + (force?'?refresh=1':'')); const data = await res.json(); if(!res.ok) throw new Error(data.detail||data.error||'Помилка'); programs = data.programs || []; $('loadStatus').innerHTML = `Завантажено <b>${programs.length}</b> пропозицій з Освіта.UA. Дані: ${new Date(data.fetchedAt).toLocaleString('uk-UA')}`; render(); }
-  catch(e){ $('loadStatus').innerHTML = `<b>Не вдалося підтягнути дані.</b><br>${e.message}<br>Перевір Render logs або інтернет на сервері.`; }
+function optionName(o){return `${o.code?o.code+' ':''}${o.speciality||''}`.trim()}
+function proposal(o){return o.proposal||o.educationProgram||o.speciality||''}
+function renderOptions(filter=''){
+ const q=filter.toLowerCase().trim();const box=$('options');box.innerHTML='';
+ const all=document.createElement('div');all.className='opt '+(state.selected==='all'?'active':'');all.innerHTML='<span class="allBadge">Усі</span><div><b>Показати всі спеціальності</b><small>Список усіх пропозицій ЛНТУ</small></div>';all.onclick=()=>selectOffer('all');box.appendChild(all);
+ state.offers.filter(o=>!q||(`${o.code} ${o.speciality} ${proposal(o)}`).toLowerCase().includes(q)).forEach(o=>{const d=document.createElement('div');d.className='opt '+(state.selected===o.id?'active':'');d.innerHTML=`<span class="code">${o.code||'—'}</span><div><b>${o.speciality||'Без назви'}</b><small>${proposal(o)||'Назва пропозиції завантажиться після вибору'}</small></div>`;d.onclick=()=>selectOffer(o.id);box.appendChild(d)});
 }
-function renderOptions(){
-  const q=($('specSearch').value||'').toLowerCase().trim();
-  const list=[{id:'all',code:'Усі',specialty:'Показати всі спеціальності',offerName:'без детальної картки'}].concat(programs);
-  const filtered=list.filter(p=>!q || [p.code,p.specialty,p.offerName,p.faculty,p.id].join(' ').toLowerCase().includes(q));
-  $('opts').innerHTML = filtered.map(p=>`<div class="opt ${selected===p.id?'active':''}" data-id="${p.id}"><span class="code">${p.code}</span><div><b>${p.specialty}</b><div class="mini">${p.offerName||''}${p.mode?' · '+p.mode:''}</div></div>${selected===p.id?'<span class="tick">✓</span>':''}</div>`).join('') || '<div class="empty">Нічого не знайдено</div>';
-  document.querySelectorAll('.opt').forEach(el=>el.onclick=()=>{selected=el.dataset.id; $('drop').classList.remove('show'); updateSelect(); render();});
+function setChosen(){
+ if(state.selected==='all'){$('chosen').innerHTML='<span class="allBadge">Усі</span><b>Показати всі спеціальності</b><span class="chev">⌄</span>';return}
+ const o=state.offers.find(x=>x.id===state.selected)||state.full.get(state.selected);$('chosen').innerHTML=`<span class="code">${o?.code||'—'}</span><b>${o?.speciality||'Спеціальність'}</b><span class="chev">⌄</span>`;
 }
-function updateSelect(){
-  if(selected==='all') $('selectBtn').innerHTML = '<span class="code">Усі</span><b>Показати всі спеціальності</b>';
-  else{ const p=selectedProgram(); $('selectBtn').innerHTML = `<span class="code">${p?.code||'—'}</span><b>${p?.specialty||'Спеціальність'}</b>`; }
-}
-function formulaRows(p,s){
-  if(!s.ok) return '<tr><td colspan="3">Введи 4 бали НМТ від 100 до 200</td></tr>';
-  const e=$('elective').value, val={ua:num('ua'),hist:num('hist'),math:num('math'),[e]:num('elScore')};
-  const rows=[['ua',p.weights.ua],['hist',p.weights.hist],['math',p.weights.math],[e,p.weights[e]]];
-  let html=rows.map(([k,w])=>`<tr><td>${LABEL[k]}</td><td>${val[k]}</td><td>× ${Number(w).toFixed(2)}</td></tr>`).join('');
-  html += `<tr><td>K4max</td><td>—</td><td>${Number(p.k4max).toFixed(2)}</td></tr><tr><td>ОУ / підготовчі курси</td><td>${s.ou}</td><td>${s.ou?'+ після ділення':'-'}</td></tr><tr><td>Регіональний коефіцієнт</td><td>Волинська область</td><td>× ${s.rk.toFixed(2)}</td></tr><tr><td>Галузевий коефіцієнт</td><td>${hasSupport(p)?'1–2 пріоритети':'не застосовується'}</td><td>× ${s.gk.toFixed(2)}</td></tr>`;
-  return html;
-}
-function stats(p){
-  const e=p.edboStats; const rows=[];
-  if(Number.isFinite(p.minRatingBudget)) rows.push(`<span><b>${fmt(p.minRatingBudget)}</b> мін. рейтинговий бюджет Освіта.UA</span>`);
-  if(Number.isFinite(p.avgRatingBudget)) rows.push(`<span><b>${fmt(p.avgRatingBudget,2)}</b> середній рейтинговий бюджет</span>`);
-  if(Number.isFinite(p.avgNmtBudget)) rows.push(`<span><b>${fmt(p.avgNmtBudget,2)}</b> середній НМТ бюджет</span>`);
-  if(e){ ['submitted','admitted','budgetApps','avgScore','minScore','maxScore','recommendedGeneral','enrolledBudget','enrolledContract','minRecommended','minBudgetEnrolled'].forEach(k=>{ if(Number.isFinite(e[k])) rows.push(`<span><b>${e[k]}</b> ${({submitted:'подано заяв',admitted:'допущено',budgetApps:'заяв на бюджет',avgScore:'сер. бал ЄДЕБО',minScore:'мін. бал ЄДЕБО',maxScore:'макс. бал ЄДЕБО',recommendedGeneral:'рекомендовано',enrolledBudget:'зараховано бюджет',enrolledContract:'зараховано контракт',minRecommended:'мін. бал рекомендованих',minBudgetEnrolled:'мін. бал зарахованих на бюджет'})[k]}</span>`); }); }
-  return rows.length ? `<div class="stats"><div style="text-align:center;font-weight:950;margin-bottom:8px">СТАТИСТИКА ЗАЯВ / ЗАРАХУВАННЯ</div><div class="statsGrid">${rows.join('')}</div></div>` : '';
-}
-function renderDetail(){
-  const root=$('detail'); if(selected==='all'){ root.innerHTML=''; return; }
-  const p=selectedProgram(); if(!p){ root.innerHTML=''; return; }
-  const s=scores(p); const pass=minBudget(p); const main=s.ok ? (hasSupport(p)?s.p12:s.p310) : null; const ok=Number.isFinite(pass)&&Number.isFinite(main)&&main>=pass;
-  root.innerHTML = `<div class="box detail">${stats(p)}<div class="detailHead"><h3><span class="code">${p.code}</span> ${p.specialty}</h3><div><b>Назва пропозиції:</b> ${p.offerName}</div><div class="mini">${p.faculty||''} ${p.mode?'· '+p.mode:''} ${p.id?'· ID '+p.id:''}</div><div style="margin-top:12px"><div class="score">${fmt(s.p12)} <small>(1–2 пріоритет${hasSupport(p)?' ×1.02':' ×1.00'})</small></div><div class="score">${fmt(s.p310)} <small>(3–10 пріоритет)</small></div></div><div class="budgetLine" style="color:${ok?'var(--green)':'var(--red)'}">${Number.isFinite(pass)?(ok?'По бюджету проходиш':'По бюджету не вистачає'):'Немає бюджетного порогу'} · ${Number.isFinite(pass)?fmt(pass):'—'}</div><div class="mini" style="margin-top:6px">Формула: (К1×П1 + К2×П2 + К3×П3 + К4×П4) / (К1+К2+К3+(К4+K4max)/2) + ОУ, потім РК і ГК.</div></div><table class="formula">${formulaRows(p,s)}</table></div>`;
-}
-function filtered(){
-  const q=($('search').value||'').toLowerCase().trim();
-  let arr = selected==='all' ? programs.slice() : programs.filter(p=>p.id===selected);
-  if(q) arr=arr.filter(p=>[p.code,p.specialty,p.offerName,p.faculty,p.id].join(' ').toLowerCase().includes(q));
-  return arr.sort((a,b)=>{ const sa=scores(a), sb=scores(b), pa=minBudget(a), pb=minBudget(b); const aa=sa.ok&&Number.isFinite(pa)&&(hasSupport(a)?sa.p12:sa.p310)>=pa; const bb=sb.ok&&Number.isFinite(pb)&&(hasSupport(b)?sb.p12:sb.p310)>=pb; if(aa!==bb) return aa?-1:1; return (a.code+a.offerName).localeCompare(b.code+b.offerName,'uk'); });
-}
-function card(p){
-  const s=scores(p), pass=minBudget(p), main=s.ok?(hasSupport(p)?s.p12:s.p310):null, [diff,cls]=verdict(main,pass);
-  return `<article class="card"><div><span class="code">${p.code}</span></div><div><div class="title">${p.specialty}</div><div class="sub"><b>Назва пропозиції:</b> ${p.offerName}<br>${p.faculty||''} ${p.mode?'· '+p.mode:''}</div><div class="pills"><span class="pill ${Number.isFinite(pass)?'ok':'warn'}">бюджет: ${Number.isFinite(pass)?fmt(pass):'немає даних'}</span><span class="pill">3–10: ${fmt(s.p310)}</span><span class="pill">1–2: ${fmt(s.p12)}</span>${hasSupport(p)?'<span class="pill warn">ГК 1.02</span>':''}${p.edboStats?'<span class="pill ok">ЄДЕБО</span>':''}</div></div><div class="right"><div class="big ${cls}">${diff}</div><div class="${cls}" style="font-weight:950">${Number.isFinite(pass)&&Number.isFinite(main)?(main>=pass?'проходиш':'не вистачає'):'—'}</div><a class="sourceLink" target="_blank" href="${p.source}">Освіта.UA</a>${p.edbo?` · <a class="sourceLink" target="_blank" href="${p.edbo}">ЄДЕБО</a>`:''}</div></article>`;
-}
-function renderTable(arr){
-  $('tbody').innerHTML = arr.map(p=>{ const s=scores(p), pass=minBudget(p); return `<tr><td><span class="code">${p.code}</span></td><td><b>${p.specialty}</b><br><span class="mini">${p.offerName}</span></td><td>${fmt(s.p310)}</td><td>${fmt(s.p12)}</td><td>${Number.isFinite(pass)?fmt(pass):'—'}</td><td><a class="sourceLink" target="_blank" href="${p.source}">Освіта</a>${p.edbo?` · <a class="sourceLink" target="_blank" href="${p.edbo}">ЄДЕБО</a>`:''}</td></tr>`; }).join('');
-}
-function render(){ updateSelect(); renderOptions(); renderDetail(); const arr=filtered(); $('head').textContent = selected==='all' ? 'Усі спеціальності під твої бали' : 'Результат по вибраній спеціальності'; $('cards').innerHTML = arr.length ? arr.map(card).join('') : '<div class="empty">Немає результатів. Перевір пошук або зачекай завантаження даних.</div>'; renderTable(arr); }
-function init(){
-  ['ua','hist','math','elScore','elective','prep','search'].forEach(id=>$(id).addEventListener('input',render));
-  $('calc').onclick=render; $('refresh').onclick=()=>load(true); $('reset').onclick=()=>{ ['ua','hist','math','elScore'].forEach(id=>$(id).value=0); $('elective').value='foreign'; $('prep').value=0; $('search').value=''; selected='all'; render(); };
-  $('selectBtn').onclick=()=>{$('drop').classList.toggle('show'); $('specSearch').focus(); renderOptions();}; $('specSearch').addEventListener('input',renderOptions); document.addEventListener('click',e=>{ if(!$('specBox').contains(e.target)) $('drop').classList.remove('show'); });
-  load(false);
-}
-init();
+async function selectOffer(id){state.selected=id;$('drop').classList.remove('open');setChosen();renderOptions($('search').value);if(id!=='all')await ensureFull(id);renderAll()}
+async function ensureFull(id){if(state.full.has(id))return state.full.get(id);const r=await fetch('/api/offer/'+encodeURIComponent(id));const j=await r.json();if(j.ok){const merged={...(state.offers.find(o=>o.id===id)||{}),...j.offer};state.full.set(id,merged);state.offers=state.offers.map(o=>o.id===id?merged:o);return merged}throw new Error(j.error||'Не вдалось завантажити спеціальність')}
+function tableRows(o,calc){const s=scores();return `<table><tr><td>${subjects.ukrainian}</td><td>${s.ukrainian}</td><td><b>× ${calc.k.ukrainian.toFixed(2)}</b></td></tr><tr><td>${subjects.history}</td><td>${s.history}</td><td><b>× ${calc.k.history.toFixed(2)}</b></td></tr><tr><td>${subjects.math}</td><td>${s.math}</td><td><b>× ${calc.k.math.toFixed(2)}</b></td></tr><tr><td>${subjects[s.fourthSubject]}</td><td>${s.fourthScore}</td><td><b>× ${calc.k.fourth.toFixed(2)}</b></td></tr><tr><td>Підготовчі курси / ОУ</td><td>${s.prep}</td><td>${s.prep?'+':'-'}</td></tr><tr><td>Регіональний коефіцієнт</td><td>—</td><td><b>× 1.00</b></td></tr><tr><td>Галузевий коефіцієнт</td><td>—</td><td><b>${calc.sector>1?'× '+calc.sector.toFixed(2):'× 1.00'}</b></td></tr><tr><td>K4max для формули Освіта.UA</td><td>—</td><td><b>${calc.k.k4max.toFixed(2)}</b></td></tr></table>`}
+function statsBlock(o){const st=o.edboStats||{};const keys=[['applied','Подано заяв'],['admitted','Допущено до конкурсу'],['budgetApps','Заяв на бюджет'],['avg','Сер. бал'],['min','Мін. бал'],['max','Макс. бал'],['recommended','Рекомендовано'],['budgetEnrolled','Зараховано на бюджет'],['contractEnrolled','Зараховано на контракт'],['budgetMin','Мін. бал бюджету']];const vals=keys.filter(([k])=>st[k]!=null);if(!vals.length)return'';return `<div class="statGrid">${vals.map(([k,l])=>`<div class="stat"><b>${st[k]}</b> ${l}</div>`).join('')}</div>`}
+function detailCard(o){const calc=calculate(o);if(!calc)return `<div class="resultCard"><div class="resultHead"><div class="title">${optionName(o)}</div><div class="proposal">Коефіцієнти ще не завантажились або їх немає на сторінці джерела.</div></div></div>`;const budget=calc.budget;let status='';if(budget==null)status='<div class="status warn">Немає відкритого мінімального бала бюджету в джерелі</div>';else if(calc.pass)status=`<div class="status ok">По бюджету проходиш · мін. бюджет: ${money(budget)}</div>`;else status=`<div class="status bad">Не вистачає до бюджету · мін. бюджет: ${money(budget)}</div>`;return `<div class="resultCard"><div class="resultHead"><div class="title">${optionName(o)}</div><div class="proposal"><b>Назва пропозиції:</b><br>${proposal(o)}</div><div class="big">${fmt(calc.p12)} <span style="font-size:.55em">(1–2 пріоритети${calc.sector>1?' ×1.02':''})</span></div><div class="subBig">${fmt(calc.p3)} <span style="font-size:.72em">(3–10 пріоритети)</span></div>${status}${statsBlock(o)}</div>${tableRows(o,calc)}<div class="resultHead"><div class="note"><b>Формула як на Освіта.UA:</b> сума балів НМТ × коефіцієнти / (K1+K2+K3+(K4+K4max)/2) + ОУ. Для 1–2 пріоритету застосовується галузевий коефіцієнт тільки якщо він є для пропозиції.</div><button class="btn" onclick="addCompare('${o.id}')">Додати до порівняння</button></div></div>`}
+function renderList(){const s=scores();const entered=s.ukrainian||s.history||s.math||s.fourthScore;let arr=state.offers.map(o=>({o,calc:calculate(o,s)}));arr.sort((a,b)=>{const ap=a.calc?.pass===true?0:a.calc?.pass===false?1:2;const bp=b.calc?.pass===true?0:b.calc?.pass===false?1:2;if(ap!==bp)return ap-bp;return (b.calc?.p3||0)-(a.calc?.p3||0)});$('summary').textContent=entered?'Список відсортований за твоїми балами. Натисни на спеціальність, щоб побачити детальний розрахунок.':'Введи свої бали. Зараз усе по нулях, як ти просив.';$('list').innerHTML=arr.map(({o,calc})=>{let b='<span class="badge warn">нема даних</span>';if(calc?.budget!=null)b=calc.pass?'<span class="badge ok">бюджет</span>':'<span class="badge bad">не вистачає</span>';return `<div class="item" onclick="selectOffer('${o.id}')"><div><div class="itemTitle">${optionName(o)}</div><div class="itemMeta">${proposal(o)||'Пропозиція завантажиться після відкриття'}</div><div class="itemMeta">3–10: <b>${calc?fmt(calc.p3):'—'}</b> · 1–2: <b>${calc?fmt(calc.p12):'—'}</b> · мін. бюджет: <b>${calc?.budget!=null?money(calc.budget):'—'}</b></div></div>${b}</div>`}).join('')}
+function renderAll(){if(state.selected==='all'){$('detail').innerHTML='';renderList();return}const o=state.full.get(state.selected)||state.offers.find(x=>x.id===state.selected);$('detail').innerHTML=o?detailCard(o):'';renderList()}
+function addCompare(id){const o=state.full.get(id)||state.offers.find(x=>x.id===id);if(!o)return;if(!state.compares.find(x=>x.id===id))state.compares.push(o);renderCompare()}
+function renderCompare(){const box=$('compareBox'),list=$('compareList');if(!state.compares.length){box.classList.add('hidden');return}box.classList.remove('hidden');list.innerHTML=state.compares.map(o=>{const c=calculate(o);return `<div class="mini"><div><b>${optionName(o)}</b><br><span class="hint">${proposal(o)}</span></div><div><b>${c?fmt(c.p3):'—'}</b><br><span class="hint">3–10</span></div></div>`}).join('')}
+async function loadOffers(){try{$('loadState').textContent='Завантажую спеціальності з Освіта.UA…';const r=await fetch('/api/offers');const j=await r.json();state.offers=j.offers||[];$('loadState').textContent=`Завантажено спеціальностей/пропозицій: ${state.offers.length}`;renderOptions();renderAll()}catch(e){$('errorBox').classList.remove('hidden');$('errorBox').textContent='Помилка завантаження: '+e.message}}
+$('chosen').onclick=()=>{$('drop').classList.toggle('open');$('search').focus()};$('search').oninput=e=>renderOptions(e.target.value);$('calcBtn').onclick=renderAll;['ukrainian','history','math','fourthScore','fourthSubject','prep'].forEach(id=>$(id).addEventListener('input',renderAll));$('resetBtn').onclick=()=>{['ukrainian','history','math','fourthScore'].forEach(id=>$(id).value=0);$('prep').value=0;state.selected='all';setChosen();renderOptions();renderAll()};$('refreshBtn').onclick=async()=>{await fetch('/api/refresh',{method:'POST'});state.full.clear();await loadOffers()};document.addEventListener('click',e=>{if(!$('selectBox').contains(e.target))$('drop').classList.remove('open')});loadOffers();
 </script>
 </body>
 </html>
