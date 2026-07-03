@@ -1,5 +1,6 @@
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 const axios = require('axios');
 const cheerio = require('cheerio');
 const iconv = require('iconv-lite');
@@ -10,12 +11,26 @@ const OSVITA_BASE = 'https://vstup.osvita.ua';
 const LNTU_PAGE = `${OSVITA_BASE}/r4/309/`;
 const EDBO_BASE = 'https://vstup2025.edbo.gov.ua';
 
-app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+const ROOT_DIR = __dirname;
+const PUBLIC_DIR = path.join(ROOT_DIR, 'public');
+const PUBLIC_INDEX = path.join(PUBLIC_DIR, 'index.html');
+const ROOT_INDEX = path.join(ROOT_DIR, 'index.html');
 
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+app.use(express.json());
+
+// Працює в обох випадках:
+// 1) правильна структура: public/index.html
+// 2) якщо GitHub Upload випадково закинув index.html у корінь репозиторію
+if (fs.existsSync(PUBLIC_DIR)) app.use(express.static(PUBLIC_DIR));
+app.use(express.static(ROOT_DIR));
+
+function sendIndex(req, res) {
+  if (fs.existsSync(PUBLIC_INDEX)) return res.sendFile(PUBLIC_INDEX);
+  if (fs.existsSync(ROOT_INDEX)) return res.sendFile(ROOT_INDEX);
+  return res.status(500).send(`<!doctype html><html lang="uk"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>LNTU</title><body style="font-family:Arial;padding:24px"><h1>Файл index.html не знайдено</h1><p>У репозиторії має бути <b>public/index.html</b> або <b>index.html</b> у корені.</p></body></html>`);
+}
+
+app.get('/', sendIndex);
 
 const cache = new Map();
 const TTL = 1000 * 60 * 60 * 6;
@@ -311,4 +326,13 @@ app.post('/api/refresh', async (req, res) => {
   res.json({ ok:true, count:offers.length });
 });
 
-app.listen(PORT, () => console.log(`LNTU Osvita calculator running on port ${PORT}`));
+// Щоб пряме відкриття будь-якої сторінки не давало Not Found.
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api/')) return next();
+  return sendIndex(req, res);
+});
+
+app.listen(PORT, () => {
+  console.log(`LNTU Osvita calculator running on port ${PORT}`);
+  console.log('Index exists:', { publicIndex: fs.existsSync(PUBLIC_INDEX), rootIndex: fs.existsSync(ROOT_INDEX) });
+});
