@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: lntu-vstup-calculator
-    runtime: static
+    name: lntu-calculator
+    env: static
     buildCommand: ""
     staticPublishPath: .
