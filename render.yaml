@@ -1,5 +1,7 @@
 services:
   - type: web
-    name: lntu-2026-osvita-calc
-    runtime: static
-    staticPublishPath: .
+    name: lntu-osvita-edbo-calculator
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
