@@ -1,6 +1,5 @@
 services:
   - type: web
     name: lntu-2026-osvita-calc
-    env: static
-    buildCommand: ""
+    runtime: static
     staticPublishPath: .
