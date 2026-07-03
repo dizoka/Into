@@ -1,10 +1,6 @@
 services:
   - type: web
-    name: lntu-budget-picker
+    name: lntu-vstup-calculator
     runtime: static
     buildCommand: ""
     staticPublishPath: .
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
